@@ -93,4 +93,5 @@ final class SearchStore {
 
         isLoading = false
     }
+
 }

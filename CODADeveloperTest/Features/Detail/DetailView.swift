@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct DetailView: View {
+
     let item: MediaItemViewState
 
     var body: some View {
@@ -58,17 +59,18 @@ struct DetailView: View {
                     }
 
                     // Assets section
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Assets")
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Assets (\(item.links.count))")
                             .font(.headline)
 
-                        if item.assetCount > 0 {
-                            Text("\(item.assetCount) media asset\(item.assetCount == 1 ? "" : "s") available")
-                                .foregroundStyle(.secondary)
-                        } else {
+                        if item.links.isEmpty {
                             Text("No assets available")
                                 .foregroundStyle(.secondary)
                                 .italic()
+                        } else {
+                            ForEach(item.links) { link in
+                                MediaLinkCard(link: link)
+                            }
                         }
                     }
                 }
@@ -92,14 +94,13 @@ struct DetailView: View {
         .font(.subheadline)
     }
 
-    // MARK: - Helper Methods
-
     private func formatDate(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.dateStyle = .medium
         formatter.timeStyle = .none
         return formatter.string(from: date)
     }
+
 }
 
 // MARK: - Previews
@@ -116,9 +117,9 @@ struct DetailView: View {
             title: "Test Item",
             center: nil,
             description: nil,
-            assetCount: 0,
             thumbnailURL: nil,
-            dateCreated: nil
+            dateCreated: nil,
+            links: []
         ))
     }
 }

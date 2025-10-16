@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct MediaItemRow: View {
+
     let item: MediaItemViewState
 
     var body: some View {
@@ -70,6 +71,7 @@ struct MediaItemRow: View {
         .background(Color(.systemGray6))
         .clipShape(RoundedRectangle(cornerRadius: 8))
     }
+
 }
 
 // MARK: - Previews

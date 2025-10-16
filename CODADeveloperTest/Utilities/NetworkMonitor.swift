@@ -16,6 +16,7 @@ extension Logger {
 /// Monitors network connectivity changes
 @Observable
 final class NetworkMonitor {
+
     private let monitor = NWPathMonitor()
     private let queue = DispatchQueue(label: "NetworkMonitor")
 
@@ -49,4 +50,5 @@ final class NetworkMonitor {
         monitor.cancel()
         Logger.network.info("📡 Network monitoring stopped")
     }
+
 }

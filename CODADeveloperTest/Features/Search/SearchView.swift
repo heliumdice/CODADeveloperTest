@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct SearchView: View {
+
     @Environment(SearchStore.self) private var store
     @Environment(\.scenePhase) private var scenePhase
 
@@ -24,10 +25,16 @@ struct SearchView: View {
                     Task { await store.search() }
                 }
                 .task {
-                    // Load cached data when view appears, then refresh from network
+                    // Load cached data when view appears
                     if !store.query.isEmpty {
-                        await store.loadCached() // Show cached immediately
-                        await store.search()      // Then refresh from network
+                        await store.loadCached() // Show cached immediately without loading spinner
+                    }
+                }
+                .onChange(of: store.query) { oldQuery, newQuery in
+                    // Clear results when query is cleared
+                    if newQuery.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        store.items = []
+                        store.error = nil
                     }
                 }
                 .onChange(of: scenePhase) { oldPhase, newPhase in
@@ -69,6 +76,7 @@ struct SearchView: View {
         }
         .listStyle(.plain)
     }
+
 }
 
 // MARK: - Supporting Views

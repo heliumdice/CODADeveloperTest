@@ -7,6 +7,37 @@
 
 import Foundation
 
+/// View state representation of a media link/asset
+struct MediaLinkViewState: Identifiable, Hashable {
+    let id: String
+    let href: URL?
+    let rel: String?
+    let render: String?
+    let width: Int
+    let height: Int
+    let size: Int
+
+    init(from mediaLink: MediaLink) {
+        self.id = mediaLink.href ?? UUID().uuidString
+        self.href = mediaLink.href.flatMap { URL(string: $0) }
+        self.rel = mediaLink.rel
+        self.render = mediaLink.render
+        self.width = Int(mediaLink.width)
+        self.height = Int(mediaLink.height)
+        self.size = Int(mediaLink.size)
+    }
+
+    init(id: String, href: URL?, rel: String?, render: String?, width: Int, height: Int, size: Int) {
+        self.id = id
+        self.href = href
+        self.rel = rel
+        self.render = render
+        self.width = width
+        self.height = height
+        self.size = size
+    }
+}
+
 /// View state representation of a media item for UI display
 struct MediaItemViewState: Identifiable, Hashable {
     let id: String
@@ -17,6 +48,7 @@ struct MediaItemViewState: Identifiable, Hashable {
     let assetCount: Int
     let thumbnailURL: URL?
     let dateCreated: Date?
+    let links: [MediaLinkViewState]
 
     /// Creates view state from Core Data MediaItem entity
     init(from mediaItem: MediaItem) {
@@ -27,15 +59,18 @@ struct MediaItemViewState: Identifiable, Hashable {
         self.description = mediaItem.itemDescription
         self.dateCreated = mediaItem.dateCreated
 
-        // Count related links
-        self.assetCount = (mediaItem.links as? Set<MediaLink>)?.count ?? 0
+        // Convert links to view state
+        if let mediaLinks = mediaItem.links as? Set<MediaLink> {
+            self.links = mediaLinks.map { MediaLinkViewState(from: $0) }
+                .sorted { ($0.rel ?? "") < ($1.rel ?? "") } // Sort by rel type
+            self.assetCount = self.links.count
 
-        // Find preview/thumbnail URL from links
-        if let links = mediaItem.links as? Set<MediaLink> {
-            // Prefer "preview" rel type, otherwise take first link
-            let previewLink = links.first { $0.rel == "preview" } ?? links.first
+            // Find preview/thumbnail URL from links
+            let previewLink = mediaLinks.first { $0.rel == "preview" } ?? mediaLinks.first
             self.thumbnailURL = previewLink?.href.flatMap { URL(string: $0) }
         } else {
+            self.links = []
+            self.assetCount = 0
             self.thumbnailURL = nil
         }
     }
@@ -49,7 +84,8 @@ struct MediaItemViewState: Identifiable, Hashable {
         description: String?,
         assetCount: Int,
         thumbnailURL: URL?,
-        dateCreated: Date?
+        dateCreated: Date?,
+        links: [MediaLinkViewState]
     ) {
         self.id = id
         self.nasaID = nasaID
@@ -59,6 +95,7 @@ struct MediaItemViewState: Identifiable, Hashable {
         self.assetCount = assetCount
         self.thumbnailURL = thumbnailURL
         self.dateCreated = dateCreated
+        self.links = links
     }
 
     // MARK: - Mock for Previews
@@ -72,7 +109,36 @@ struct MediaItemViewState: Identifiable, Hashable {
         description: String? = "A stunning view of the Martian surface captured by the Curiosity rover.",
         assetCount: Int = 5,
         thumbnailURL: URL? = URL(string: "https://images-assets.nasa.gov/image/PIA12345/PIA12345~thumb.jpg"),
-        dateCreated: Date? = Date()
+        dateCreated: Date? = Date(),
+        links: [MediaLinkViewState] = [
+            MediaLinkViewState(
+                id: "1",
+                href: URL(string: "https://images-assets.nasa.gov/image/PIA12345/PIA12345~thumb.jpg"),
+                rel: "preview",
+                render: "image",
+                width: 100,
+                height: 100,
+                size: 15000
+            ),
+            MediaLinkViewState(
+                id: "2",
+                href: URL(string: "https://images-assets.nasa.gov/image/PIA12345/PIA12345~medium.jpg"),
+                rel: "alternate",
+                render: "image",
+                width: 800,
+                height: 600,
+                size: 250000
+            ),
+            MediaLinkViewState(
+                id: "3",
+                href: URL(string: "https://images-assets.nasa.gov/image/PIA12345/PIA12345~large.jpg"),
+                rel: "canonical",
+                render: "image",
+                width: 1920,
+                height: 1080,
+                size: 850000
+            )
+        ]
     ) -> MediaItemViewState {
         MediaItemViewState(
             id: id,
@@ -82,7 +148,8 @@ struct MediaItemViewState: Identifiable, Hashable {
             description: description,
             assetCount: assetCount,
             thumbnailURL: thumbnailURL,
-            dateCreated: dateCreated
+            dateCreated: dateCreated,
+            links: links
         )
     }
 }

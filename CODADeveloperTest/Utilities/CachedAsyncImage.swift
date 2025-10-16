@@ -10,6 +10,7 @@ import OSLog
 
 /// AsyncImage wrapper that uses ImageLoader for caching
 struct CachedAsyncImage<Content: View, Placeholder: View, Failure: View>: View {
+
     let url: URL?
     @ViewBuilder let content: (Image) -> Content
     @ViewBuilder let placeholder: () -> Placeholder
@@ -89,7 +90,6 @@ struct CachedAsyncImage<Content: View, Placeholder: View, Failure: View>: View {
             return
         }
 
-        Logger.imageLoader.info("🎬 CachedAsyncImage: Starting load for \(url.absoluteString)")
         isLoading = true
         didFail = false
 
@@ -97,18 +97,18 @@ struct CachedAsyncImage<Content: View, Placeholder: View, Failure: View>: View {
             let data = try await imageLoader.loadImage(from: url.absoluteString)
             if let downloadedImage = UIImage(data: data) {
                 self.image = downloadedImage
-                Logger.imageLoader.info("✅ CachedAsyncImage: Image loaded successfully")
             } else {
                 didFail = true
-                Logger.imageLoader.error("❌ CachedAsyncImage: Failed to create UIImage from data")
+                Logger.imageLoader.error("❌ Failed to create UIImage from data")
             }
         } catch {
             didFail = true
-            Logger.imageLoader.error("❌ CachedAsyncImage: Load failed: \(error.localizedDescription)")
+            Logger.imageLoader.error("❌ Image load failed: \(error.localizedDescription)")
         }
 
         isLoading = false
     }
+
 }
 
 // MARK: - Convenience Initializers
