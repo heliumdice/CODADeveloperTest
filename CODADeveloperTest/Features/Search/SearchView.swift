@@ -11,6 +11,7 @@ struct SearchView: View {
 
     @Environment(SearchStore.self) private var store
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.dismissSearch) private var dismissSearch
 
     var body: some View {
         NavigationStack {
@@ -29,6 +30,8 @@ struct SearchView: View {
                     if !store.query.isEmpty {
                         await store.loadCached() // Show cached immediately without loading spinner
                     }
+                    // Load recent searches
+                    await store.loadRecentSearches()
                 }
                 .onChange(of: store.query) { oldQuery, newQuery in
                     // Clear results when query is cleared
@@ -59,7 +62,20 @@ struct SearchView: View {
                 Task { await store.search() }
             }
         } else if store.items.isEmpty {
-            EmptyStateView()
+            // Show search history if query is empty and we have history
+            if store.query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !store.recentSearches.isEmpty {
+                SearchHistoryView(
+                    recentSearches: store.recentSearches,
+                    onSelectSearch: { searchTerm in
+                        // Dismiss keyboard
+                        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                        dismissSearch()
+                        Task { await store.selectSearchFromHistory(searchTerm) }
+                    }
+                )
+            } else {
+                EmptyStateView()
+            }
         } else {
             mediaList
         }
@@ -140,6 +156,37 @@ private struct EmptyStateView: View {
     }
 }
 
+private struct SearchHistoryView: View {
+    let recentSearches: [String]
+    let onSelectSearch: (String) -> Void
+
+    var body: some View {
+        List {
+            Section {
+                ForEach(recentSearches, id: \.self) { searchTerm in
+                    Button(action: {
+                        onSelectSearch(searchTerm)
+                    }) {
+                        HStack {
+                            Image(systemName: "clock.arrow.circlepath")
+                                .foregroundStyle(.secondary)
+                            Text(searchTerm)
+                                .foregroundStyle(.primary)
+                            Spacer()
+                            Image(systemName: "arrow.up.left")
+                                .foregroundStyle(.secondary)
+                                .font(.caption)
+                        }
+                    }
+                }
+            } header: {
+                Text("Recent Searches")
+            }
+        }
+        .listStyle(.insetGrouped)
+    }
+}
+
 // MARK: - Previews
 
 #Preview("Search View") {
@@ -162,4 +209,13 @@ private struct EmptyStateView: View {
 
 #Preview("Empty State") {
     EmptyStateView()
+}
+
+#Preview("Search History") {
+    SearchHistoryView(
+        recentSearches: ["mars", "apollo", "moon", "earth", "jupiter"],
+        onSelectSearch: { searchTerm in
+            print("Selected: \(searchTerm)")
+        }
+    )
 }

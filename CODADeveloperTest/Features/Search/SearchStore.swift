@@ -27,6 +27,7 @@ final class SearchStore {
     var isLoading: Bool = false
     var error: String?
     var items: [MediaItemViewState] = []
+    var recentSearches: [String] = []
 
     // MARK: - Dependencies
 
@@ -54,6 +55,17 @@ final class SearchStore {
         self.items = mediaItems.map { MediaItemViewState(from: $0) }
     }
 
+    /// Loads recent search queries from Core Data
+    func loadRecentSearches() async {
+        self.recentSearches = await repository.fetchRecentSearchQueries(limit: 10)
+    }
+
+    /// Selects a search from history and performs the search
+    func selectSearchFromHistory(_ searchTerm: String) async {
+        self.query = searchTerm
+        await search()
+    }
+
     /// Performs a search: fetches from API, persists to Core Data, then refreshes UI
     /// Falls back to cached data if offline
     func search() async {
@@ -74,6 +86,9 @@ final class SearchStore {
 
             // 3. Refresh UI from Core Data (single source of truth)
             await loadCached()
+
+            // 4. Refresh recent searches
+            await loadRecentSearches()
 
         } catch let networkError as NetworkError {
             // If network error, try to load cached data

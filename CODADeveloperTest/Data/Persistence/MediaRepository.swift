@@ -110,6 +110,29 @@ final class MediaRepository {
         }
     }
 
+    /// Fetches recent search queries sorted by most recent
+    /// - Parameter limit: Maximum number of queries to return (default: 10)
+    /// - Returns: Array of search query strings
+    func fetchRecentSearchQueries(limit: Int = 10) async -> [String] {
+        let context = coreDataManager.viewContext
+
+        return await context.perform {
+            let request: NSFetchRequest<SearchQuery> = SearchQuery.fetchRequest()
+            request.sortDescriptors = [
+                NSSortDescriptor(keyPath: \SearchQuery.createdAt, ascending: false)
+            ]
+            request.fetchLimit = limit
+
+            do {
+                let queries = try context.fetch(request)
+                return queries.compactMap { $0.term }
+            } catch {
+                assertionFailure("Failed to fetch recent queries: \(error.localizedDescription)")
+                return []
+            }
+        }
+    }
+
     // MARK: - Private Helpers
 
     /// Gets existing SearchQuery or creates a new one (ensures uniqueness by term)
