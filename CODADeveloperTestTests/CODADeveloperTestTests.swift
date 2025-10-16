@@ -1,5 +1,5 @@
 //
-//  CODADeveloperTestTests.swift
+//  NASAAPIDTOTests.swift
 //  CODADeveloperTestTests
 //
 //  Created by Dickie on 14/10/2025.
@@ -9,12 +9,13 @@ import Foundation
 import Testing
 @testable import CODADeveloperTest
 
-@Suite(.serialized)
+@Suite
 struct NASAAPIDTOTests: Sendable {
 
     // MARK: - Tests
 
     @Test
+    @MainActor
     func testDecodeCompleteResponse() throws {
         // Sample JSON response from NASA API with all fields populated
         let validJSONWithLinks = """
@@ -91,7 +92,9 @@ struct NASAAPIDTOTests: Sendable {
         #expect(link.size == 5000)
     }
 
-    @Test func testDecodeMissingOptionalFields() throws {
+    @Test
+    @MainActor
+    func testDecodeMissingOptionalFields() throws {
         // Sample JSON with missing optional fields to test graceful handling
         let validJSONWithoutOptionals = """
         {
@@ -137,6 +140,7 @@ struct NASAAPIDTOTests: Sendable {
     }
 
     @Test
+    @MainActor
     func testDecodeNilLinks() throws {
         // Sample JSON with nil links array to test edge case
         let validJSONWithNilLinks = """
@@ -175,6 +179,7 @@ struct NASAAPIDTOTests: Sendable {
     }
 
     @Test
+    @MainActor
     func testInvalidJSON() throws {
         let invalidJSON = "{ invalid json }"
         let decoder = JSONDecoder()

@@ -59,6 +59,9 @@ struct SearchStoreTests: Sendable {
     }
 
     private func createTestStore() -> (SearchStore, MockAPIService, MediaRepository) {
+        // Clear UserDefaults to ensure clean test state
+        UserDefaults.standard.removeObject(forKey: "lastSearchQuery")
+
         let mockAPI = MockAPIService()
         let coreDataManager = CoreDataManager(inMemory: true)
         let repository = MediaRepository(coreDataManager: coreDataManager)
