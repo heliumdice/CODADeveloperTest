@@ -8,7 +8,6 @@
 import CoreData
 
 /// Manages the Core Data stack - provides persistent container and contexts
-/// NOTE: Not a singleton - inject as dependency for testability
 final class CoreDataManager {
     let container: NSPersistentContainer
 
