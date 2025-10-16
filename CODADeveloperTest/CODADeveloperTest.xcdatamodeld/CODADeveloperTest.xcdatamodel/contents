@@ -1,9 +1,45 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="1" systemVersion="11A491" minimumToolsVersion="Automatic" sourceLanguage="Swift" usedWithCloudKit="false" userDefinedModelVersionIdentifier="">
-    <entity name="Item" representedClassName="Item" syncable="YES" codeGenerationType="class">
-        <attribute name="timestamp" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="23507" systemVersion="24A335" minimumToolsVersion="Automatic" sourceLanguage="Swift" usedWithCloudKit="false" userDefinedModelVersionIdentifier="">
+    <entity name="SearchQuery" representedClassName="SearchQuery" syncable="YES" codeGenerationType="class">
+        <attribute name="createdAt" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="term" attributeType="String"/>
+        <relationship name="searchQueryItems" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="SearchQueryItem" inverseName="searchQuery" inverseEntity="SearchQueryItem"/>
+        <uniquenessConstraints>
+            <uniquenessConstraint>
+                <constraint value="term"/>
+            </uniquenessConstraint>
+        </uniquenessConstraints>
     </entity>
-    <elements>
-        <element name="Item" positionX="-63" positionY="-18" width="128" height="44"/>
-    </elements>
+    <entity name="MediaItem" representedClassName="MediaItem" syncable="YES" codeGenerationType="class">
+        <attribute name="center" optional="YES" attributeType="String"/>
+        <attribute name="dateCreated" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="itemDescription" optional="YES" attributeType="String"/>
+        <attribute name="keywords" optional="YES" attributeType="Transformable" valueTransformerName="NSSecureUnarchiveFromData" customClassName="[String]"/>
+        <attribute name="location" optional="YES" attributeType="String"/>
+        <attribute name="mediaType" optional="YES" attributeType="String"/>
+        <attribute name="nasaID" attributeType="String"/>
+        <attribute name="photographer" optional="YES" attributeType="String"/>
+        <attribute name="title" attributeType="String"/>
+        <relationship name="links" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="MediaLink" inverseName="mediaItem" inverseEntity="MediaLink"/>
+        <relationship name="searchQueries" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="SearchQueryItem" inverseName="mediaItem" inverseEntity="SearchQueryItem"/>
+        <uniquenessConstraints>
+            <uniquenessConstraint>
+                <constraint value="nasaID"/>
+            </uniquenessConstraint>
+        </uniquenessConstraints>
+    </entity>
+    <entity name="MediaLink" representedClassName="MediaLink" syncable="YES" codeGenerationType="class">
+        <attribute name="height" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="href" attributeType="String"/>
+        <attribute name="rel" optional="YES" attributeType="String"/>
+        <attribute name="render" optional="YES" attributeType="String"/>
+        <attribute name="size" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="width" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <relationship name="mediaItem" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="MediaItem" inverseName="links" inverseEntity="MediaItem"/>
+    </entity>
+    <entity name="SearchQueryItem" representedClassName="SearchQueryItem" syncable="YES" codeGenerationType="class">
+        <attribute name="createdAt" attributeType="Date" usesScalarValueType="NO"/>
+        <relationship name="mediaItem" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="MediaItem" inverseName="searchQueries" inverseEntity="MediaItem"/>
+        <relationship name="searchQuery" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="SearchQuery" inverseName="searchQueryItems" inverseEntity="SearchQuery"/>
+    </entity>
 </model>
