@@ -9,13 +9,14 @@ import SwiftUI
 
 struct ContentView: View {
     var body: some View {
-        NavigationStack {
-            Text("Hello, World!")
-                .navigationTitle("NASA Media Browser")
-        }
+        SearchView()
     }
 }
 
 #Preview {
     ContentView()
+        .environment(SearchStore(
+            apiService: NASAAPIService(),
+            repository: MediaRepository(coreDataManager: CoreDataManager(inMemory: true))
+        ))
 }
