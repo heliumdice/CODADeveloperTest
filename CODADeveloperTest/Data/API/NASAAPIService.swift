@@ -36,12 +36,19 @@ protocol NASAAPIServiceProtocol {
 }
 
 final class NASAAPIService: NASAAPIServiceProtocol {
-    private let baseURL = "https://images-api.nasa.gov/search"
+    // MARK: - Constants
+
+    private static let baseURL = "https://images-api.nasa.gov/search"
+    private static let successStatusCode = 200
+    private static let requestTimeout: TimeInterval = 30
+
+    // MARK: - Properties
+
     private let session: URLSession
 
     init(session: URLSession = .shared) {
         let configuration = URLSessionConfiguration.default
-        configuration.timeoutIntervalForRequest = 30
+        configuration.timeoutIntervalForRequest = Self.requestTimeout
         configuration.waitsForConnectivity = true
         self.session = session
     }
@@ -55,7 +62,7 @@ final class NASAAPIService: NASAAPIServiceProtocol {
             throw NetworkError.invalidURL
         }
 
-        var components = URLComponents(string: baseURL)
+        var components = URLComponents(string: Self.baseURL)
         components?.queryItems = [
             URLQueryItem(name: "q", value: query)
         ]
@@ -71,7 +78,7 @@ final class NASAAPIService: NASAAPIServiceProtocol {
                 throw NetworkError.noData
             }
 
-            guard httpResponse.statusCode == 200 else {
+            guard httpResponse.statusCode == Self.successStatusCode else {
                 throw NetworkError.networkError(
                     NSError(domain: "HTTP", code: httpResponse.statusCode)
                 )

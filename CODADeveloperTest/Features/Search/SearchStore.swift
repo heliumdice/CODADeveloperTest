@@ -12,12 +12,16 @@ import Observation
 @MainActor
 @Observable
 final class SearchStore {
+    // MARK: - Constants
+
+    static let lastSearchQueryKey = "lastSearchQuery"
+
     // MARK: - State
 
     var query: String = "" {
         didSet {
             // Persist last search query
-            UserDefaults.standard.set(query, forKey: "lastSearchQuery")
+            UserDefaults.standard.set(query, forKey: Self.lastSearchQueryKey)
         }
     }
     var isLoading: Bool = false
@@ -36,7 +40,7 @@ final class SearchStore {
         self.repository = repository
 
         // Restore last search query
-        if let lastQuery = UserDefaults.standard.string(forKey: "lastSearchQuery"),
+        if let lastQuery = UserDefaults.standard.string(forKey: Self.lastSearchQueryKey),
            !lastQuery.isEmpty {
             self.query = lastQuery
         }
