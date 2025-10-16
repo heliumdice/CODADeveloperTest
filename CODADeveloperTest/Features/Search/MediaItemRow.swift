@@ -12,10 +12,8 @@ struct MediaItemRow: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
-            // Thumbnail
             thumbnail
 
-            // Content
             VStack(alignment: .leading, spacing: 4) {
                 Text(item.title)
                     .font(.headline)
@@ -55,20 +53,13 @@ struct MediaItemRow: View {
     private var thumbnail: some View {
         Group {
             if let url = item.thumbnailURL {
-                AsyncImage(url: url) { phase in
-                    switch phase {
-                    case .empty:
-                        ProgressView()
-                    case .success(let image):
-                        image
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                    case .failure:
-                        Image(systemName: "photo")
-                            .foregroundStyle(.secondary)
-                    @unknown default:
-                        EmptyView()
-                    }
+                CachedAsyncImage(url: url) { image in
+                    image
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                } failure: {
+                    Image(systemName: "photo")
+                        .foregroundStyle(.secondary)
                 }
             } else {
                 Image(systemName: "photo")

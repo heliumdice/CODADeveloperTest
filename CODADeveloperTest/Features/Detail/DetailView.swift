@@ -15,23 +15,15 @@ struct DetailView: View {
             VStack(alignment: .leading, spacing: 20) {
                 // Header image
                 if let url = item.thumbnailURL {
-                    AsyncImage(url: url) { phase in
-                        switch phase {
-                        case .empty:
-                            ProgressView()
-                                .frame(height: 250)
-                        case .success(let image):
-                            image
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                        case .failure:
-                            Image(systemName: "photo")
-                                .font(.system(size: 60))
-                                .foregroundStyle(.secondary)
-                                .frame(height: 250)
-                        @unknown default:
-                            EmptyView()
-                        }
+                    CachedAsyncImage(url: url) { image in
+                        image
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                    } failure: {
+                        Image(systemName: "photo")
+                            .font(.system(size: 60))
+                            .foregroundStyle(.secondary)
+                            .frame(height: 250)
                     }
                     .frame(maxWidth: .infinity)
                     .background(Color(.systemGray6))

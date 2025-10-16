@@ -14,7 +14,12 @@ import Observation
 final class SearchStore {
     // MARK: - State
 
-    var query: String = "mars"
+    var query: String = "" {
+        didSet {
+            // Persist last search query
+            UserDefaults.standard.set(query, forKey: "lastSearchQuery")
+        }
+    }
     var isLoading: Bool = false
     var error: String?
     var items: [MediaItemViewState] = []
@@ -29,6 +34,12 @@ final class SearchStore {
     init(apiService: NASAAPIService, repository: MediaRepository) {
         self.apiService = apiService
         self.repository = repository
+
+        // Restore last search query
+        if let lastQuery = UserDefaults.standard.string(forKey: "lastSearchQuery"),
+           !lastQuery.isEmpty {
+            self.query = lastQuery
+        }
     }
 
     // MARK: - Actions
@@ -40,6 +51,7 @@ final class SearchStore {
     }
 
     /// Performs a search: fetches from API, persists to Core Data, then refreshes UI
+    /// Falls back to cached data if offline
     func search() async {
         guard !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             error = "Please enter a search term"
@@ -60,9 +72,23 @@ final class SearchStore {
             await loadCached()
 
         } catch let networkError as NetworkError {
-            self.error = networkError.localizedDescription
+            // If network error, try to load cached data
+            await loadCached()
+
+            if items.isEmpty {
+                // Only show error if we have no cached data
+                self.error = networkError.localizedDescription
+            } else {
+                // We have cached data, clear error
+                self.error = nil
+            }
         } catch {
-            self.error = "An unexpected error occurred: \(error.localizedDescription)"
+            // Try to load cached data for other errors too
+            await loadCached()
+
+            if items.isEmpty {
+                self.error = "An unexpected error occurred: \(error.localizedDescription)"
+            }
         }
 
         isLoading = false

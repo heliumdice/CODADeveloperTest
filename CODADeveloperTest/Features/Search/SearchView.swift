@@ -9,6 +9,7 @@ import SwiftUI
 
 struct SearchView: View {
     @Environment(SearchStore.self) private var store
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         NavigationStack {
@@ -23,8 +24,19 @@ struct SearchView: View {
                     Task { await store.search() }
                 }
                 .task {
-                    // Load cached data when view appears
-                    await store.loadCached()
+                    // Load cached data when view appears, then refresh from network
+                    if !store.query.isEmpty {
+                        await store.loadCached() // Show cached immediately
+                        await store.search()      // Then refresh from network
+                    }
+                }
+                .onChange(of: scenePhase) { oldPhase, newPhase in
+                    // Refresh when app becomes active (e.g., after turning off airplane mode)
+                    if oldPhase == .background && newPhase == .active && !store.query.isEmpty {
+                        Task {
+                            await store.search()
+                        }
+                    }
                 }
         }
     }
@@ -61,7 +73,7 @@ struct SearchView: View {
 
 // MARK: - Supporting Views
 
-struct LoadingView: View {
+private struct LoadingView: View {
     var body: some View {
         VStack(spacing: 16) {
             ProgressView()
@@ -72,7 +84,7 @@ struct LoadingView: View {
     }
 }
 
-struct ErrorView: View {
+private struct ErrorView: View {
     let message: String
     let onRetry: () -> Void
 
@@ -100,7 +112,7 @@ struct ErrorView: View {
     }
 }
 
-struct EmptyStateView: View {
+private struct EmptyStateView: View {
     var body: some View {
         VStack(spacing: 20) {
             Image(systemName: "magnifyingglass")

@@ -11,6 +11,7 @@ import Foundation
 /// Handles all Core Data CRUD operations for media items
 /// Implements upsert logic and many-to-many relationship management
 final class MediaRepository {
+
     private let coreDataManager: CoreDataManager
 
     init(coreDataManager: CoreDataManager) {

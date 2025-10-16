@@ -9,12 +9,14 @@ import SwiftUI
 
 @main
 struct CODADeveloperTestApp: App {
-    // Create dependencies (not singletons - injected via initializers)
-    private let coreDataManager = CoreDataManager()
+
     @State private var searchStore: SearchStore
+    @State private var networkMonitor = NetworkMonitor()
+
+    private let coreDataManager = CoreDataManager()
+    private let imageLoader = ImageLoader()
 
     init() {
-        // Set up dependency graph
         let apiService = NASAAPIService()
         let repository = MediaRepository(coreDataManager: coreDataManager)
         let store = SearchStore(apiService: apiService, repository: repository)
@@ -26,6 +28,8 @@ struct CODADeveloperTestApp: App {
         WindowGroup {
             ContentView()
                 .environment(searchStore)
+                .environment(networkMonitor)
+                .environment(\.imageLoader, imageLoader)
         }
     }
 }

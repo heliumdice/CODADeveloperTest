@@ -9,6 +9,7 @@ import CoreData
 
 /// Manages the Core Data stack - provides persistent container and contexts
 final class CoreDataManager {
+
     let container: NSPersistentContainer
 
     /// Main thread context for UI operations
@@ -42,4 +43,5 @@ final class CoreDataManager {
         context.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
         return context
     }
+
 }
