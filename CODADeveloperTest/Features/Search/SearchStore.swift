@@ -26,12 +26,12 @@ final class SearchStore {
 
     // MARK: - Dependencies
 
-    private let apiService: NASAAPIService
+    private let apiService: NASAAPIServiceProtocol
     private let repository: MediaRepository
 
     // MARK: - Initialization
 
-    init(apiService: NASAAPIService, repository: MediaRepository) {
+    init(apiService: NASAAPIServiceProtocol, repository: MediaRepository) {
         self.apiService = apiService
         self.repository = repository
 

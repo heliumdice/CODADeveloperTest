@@ -12,6 +12,7 @@ enum NetworkError: LocalizedError {
     case noData
     case decodingFailed(Error)
     case networkError(Error)
+    case networkUnavailable
 
     var errorDescription: String? {
         switch self {
@@ -23,11 +24,18 @@ enum NetworkError: LocalizedError {
             return "Unable to process server response: \(error.localizedDescription)"
         case .networkError(let error):
             return "Network error: \(error.localizedDescription)"
+        case .networkUnavailable:
+            return "Network connection unavailable"
         }
     }
 }
 
-final class NASAAPIService {
+/// Protocol for NASA API service to enable testing with mocks
+protocol NASAAPIServiceProtocol {
+    func search(query: String) async throws -> [SearchItem]
+}
+
+final class NASAAPIService: NASAAPIServiceProtocol {
     private let baseURL = "https://images-api.nasa.gov/search"
     private let session: URLSession
 

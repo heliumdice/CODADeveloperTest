@@ -150,7 +150,7 @@ final class MediaRepository {
         mediaItem.mediaType = data.mediaType
         mediaItem.location = data.location
         mediaItem.photographer = data.photographer
-        mediaItem.keywords = data.keywords
+        mediaItem.keywords = data.keywords as NSObject?
 
         return mediaItem
     }
