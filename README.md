@@ -179,8 +179,10 @@ SearchQuery (1) ↔ (Many) SearchQueryItem (Many) ↔ (1) MediaItem (1) ↔ (Man
 ### Search History
 - Automatically tracks last 10 unique search queries
 - Displays when search field is empty
+- Shows relative time since last search ("2m", "3h", "5d")
 - Tap to instantly re-run previous searches
 - Persists across app launches via Core Data
+- Case-insensitive matching prevents duplicates ("Mars" and "mars" treated as same term)
 
 ### Image Caching
 The app implements a **two-tier caching strategy** for optimal performance:

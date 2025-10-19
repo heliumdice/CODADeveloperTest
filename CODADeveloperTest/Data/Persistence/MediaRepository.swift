@@ -7,6 +7,11 @@
 
 import CoreData
 import Foundation
+import OSLog
+
+extension Logger {
+    static let coreData = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "coreData")
+}
 
 /// Handles all Core Data CRUD operations for media items
 /// Implements upsert logic and many-to-many relationship management
@@ -34,6 +39,8 @@ final class MediaRepository {
             // 2. Clear existing SearchQueryItem joins for this search term
             // This ensures cached data reflects the latest API results
             if let existingJoins = searchQuery.searchQueryItems as? Set<SearchQueryItem> {
+                let joinCount = existingJoins.count
+                Logger.coreData.info("🧹 Clearing \(joinCount) existing join(s) for '\(term)'")
                 for join in existingJoins {
                     context.delete(join)
                 }
@@ -76,6 +83,7 @@ final class MediaRepository {
             }
 
             // 7. Save context
+            Logger.coreData.info("💾 Saved \(items.count) item(s) for '\(term)'")
             try context.save()
         }
 
@@ -96,8 +104,9 @@ final class MediaRepository {
         return await context.perform {
             let request: NSFetchRequest<MediaItem> = MediaItem.fetchRequest()
             // Traverse many-to-many relationship: MediaItem -> SearchQueryItem -> SearchQuery
+            // Use case-insensitive comparison to match search terms regardless of case
             request.predicate = NSPredicate(
-                format: "ANY searchQueries.searchQuery.term == %@",
+                format: "ANY searchQueries.searchQuery.term ==[c] %@",
                 term
             )
             request.sortDescriptors = [
@@ -115,8 +124,8 @@ final class MediaRepository {
 
     /// Fetches recent search queries sorted by most recent
     /// - Parameter limit: Maximum number of queries to return (default: 10)
-    /// - Returns: Array of search query strings
-    func fetchRecentSearchQueries(limit: Int = 10) async -> [String] {
+    /// - Returns: Array of recent search items with timestamps
+    func fetchRecentSearchQueries(limit: Int = 10) async -> [RecentSearchItem] {
         let context = coreDataManager.viewContext
 
         return await context.perform {
@@ -128,7 +137,10 @@ final class MediaRepository {
 
             do {
                 let queries = try context.fetch(request)
-                return queries.compactMap { $0.term }
+                return queries.compactMap { query in
+                    guard let term = query.term, let date = query.createdAt else { return nil }
+                    return RecentSearchItem(term: term, lastSearchedAt: date)
+                }
             } catch {
                 assertionFailure("Failed to fetch recent queries: \(error.localizedDescription)")
                 return []
@@ -139,18 +151,30 @@ final class MediaRepository {
     // MARK: - Private Helpers
 
     /// Gets existing SearchQuery or creates a new one (ensures uniqueness by term)
+    /// Updates timestamp on every use to track recency for search history
+    ///
+    /// - Note: `createdAt` is semantically "lastSearchedAt" - it's updated every time
+    ///   the search term is used to ensure recent searches are ordered by recency,
+    ///   not first-use. Renaming the attribute would require Core Data migration.
+    /// - Note: Search terms are matched case-insensitively ("Mars" and "mars" are
+    ///   treated as the same term). The original case from the first search is preserved.
     private func getOrCreateSearchQuery(_ term: String, in context: NSManagedObjectContext) throws -> SearchQuery {
         let fetchRequest: NSFetchRequest<SearchQuery> = SearchQuery.fetchRequest()
-        fetchRequest.predicate = NSPredicate(format: "term == %@", term)
+        fetchRequest.predicate = NSPredicate(format: "term ==[c] %@", term) // [c] = case-insensitive
         fetchRequest.fetchLimit = 1
 
         if let existing = try context.fetch(fetchRequest).first {
+            // Update timestamp to reflect this search was just performed
+            // This ensures recent searches list shows true recency, not first-use order
+            existing.createdAt = Date() // Semantically: lastSearchedAt
+            Logger.coreData.info("🔄 Updated timestamp for existing search '\(term)'")
             return existing
         }
 
         let newQuery = SearchQuery(context: context)
         newQuery.term = term
-        newQuery.createdAt = Date()
+        newQuery.createdAt = Date() // Semantically: lastSearchedAt
+        Logger.coreData.info("✨ Created new search query '\(term)'")
         return newQuery
     }
 

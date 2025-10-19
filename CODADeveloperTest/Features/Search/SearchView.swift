@@ -157,21 +157,26 @@ private struct EmptyStateView: View {
 }
 
 private struct SearchHistoryView: View {
-    let recentSearches: [String]
+    let recentSearches: [RecentSearchItem]
     let onSelectSearch: (String) -> Void
 
     var body: some View {
         List {
             Section {
-                ForEach(recentSearches, id: \.self) { searchTerm in
+                ForEach(recentSearches) { searchItem in
                     Button(action: {
-                        onSelectSearch(searchTerm)
+                        onSelectSearch(searchItem.term)
                     }) {
                         HStack {
                             Image(systemName: "clock.arrow.circlepath")
                                 .foregroundStyle(.secondary)
-                            Text(searchTerm)
-                                .foregroundStyle(.primary)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(searchItem.term)
+                                    .foregroundStyle(.primary)
+                                Text(searchItem.lastSearchedAt.relativeTimeCompact())
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
                             Spacer()
                             Image(systemName: "arrow.up.left")
                                 .foregroundStyle(.secondary)
@@ -212,8 +217,15 @@ private struct SearchHistoryView: View {
 }
 
 #Preview("Search History") {
-    SearchHistoryView(
-        recentSearches: ["mars", "apollo", "moon", "earth", "jupiter"],
+    let now = Date()
+    return SearchHistoryView(
+        recentSearches: [
+            RecentSearchItem(term: "mars", lastSearchedAt: now.addingTimeInterval(-2 * .minute)),
+            RecentSearchItem(term: "apollo", lastSearchedAt: now.addingTimeInterval(-.hour)),
+            RecentSearchItem(term: "moon", lastSearchedAt: now.addingTimeInterval(-.day)),
+            RecentSearchItem(term: "earth", lastSearchedAt: now.addingTimeInterval(-.week)),
+            RecentSearchItem(term: "jupiter", lastSearchedAt: now.addingTimeInterval(-.month))
+        ],
         onSelectSearch: { searchTerm in
             print("Selected: \(searchTerm)")
         }

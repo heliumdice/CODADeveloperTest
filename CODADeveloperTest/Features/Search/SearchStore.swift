@@ -27,7 +27,7 @@ final class SearchStore {
     var isLoading: Bool = false
     var error: String?
     var items: [MediaItemViewState] = []
-    var recentSearches: [String] = []
+    var recentSearches: [RecentSearchItem] = []
 
     // MARK: - Dependencies
 

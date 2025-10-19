@@ -290,4 +290,39 @@ struct MediaRepositoryTests: Sendable {
         let secondFetch = await repository.fetchMediaForSearchTerm(searchTerm)
         #expect(secondFetch.isEmpty)
     }
+
+    @Test
+    func testRecentSearchesOrderByRecency() async throws {
+        let coreDataManager = createInMemoryCoreDataManager()
+        let repository = await MediaRepository(coreDataManager: coreDataManager)
+
+        let searchItem = createSampleSearchItem()
+
+        // Perform searches in this order: mars -> apollo -> jupiter
+        try await repository.saveSearchResults([searchItem], for: "mars")
+        try? await Task.sleep(nanoseconds: 100_000_000) // 0.1s delay
+
+        try await repository.saveSearchResults([searchItem], for: "apollo")
+        try? await Task.sleep(nanoseconds: 100_000_000) // 0.1s delay
+
+        try await repository.saveSearchResults([searchItem], for: "jupiter")
+
+        // Recent searches should be ordered: jupiter, apollo, mars
+        let recentSearches = await repository.fetchRecentSearchQueries(limit: 10)
+        #expect(recentSearches.count == 3)
+        #expect(recentSearches[0].term == "jupiter")
+        #expect(recentSearches[1].term == "apollo")
+        #expect(recentSearches[2].term == "mars")
+
+        // Now search "mars" again - it should bubble to the top
+        try? await Task.sleep(nanoseconds: 100_000_000) // 0.1s delay
+        try await repository.saveSearchResults([searchItem], for: "mars")
+
+        // Recent searches should now be: mars, jupiter, apollo
+        let updatedSearches = await repository.fetchRecentSearchQueries(limit: 10)
+        #expect(updatedSearches.count == 3)
+        #expect(updatedSearches[0].term == "mars") // Bubbled to top!
+        #expect(updatedSearches[1].term == "jupiter")
+        #expect(updatedSearches[2].term == "apollo")
+    }
 }
