@@ -19,9 +19,9 @@ struct SearchView: View {
                 .navigationTitle("NASA Media Browser")
                 .searchable(
                     text: Bindable(store).query,
-                    placement: .navigationBarDrawer(displayMode: .always),
                     prompt: "Search NASA media..."
                 )
+                .modifier(SearchToolbarModifier())
                 .onSubmit(of: .search) {
                     Task { await store.search() }
                 }

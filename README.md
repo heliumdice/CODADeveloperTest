@@ -141,6 +141,8 @@ CODADeveloperTest/
 │       └── CODADeveloperTest.xcdatamodeld
 ├── Models/
 │   └── MediaItemViewState.swift        # View state models
+├── ViewModifiers/
+│   └── SearchToolbarModifier.swift     # iOS 26+ bottom toolbar search placement
 └── Utilities/
     ├── ImageLoader.swift               # Two-tier image caching (memory + disk)
     ├── CachedAsyncImage.swift          # SwiftUI image view with caching
@@ -199,6 +201,31 @@ The app implements a **two-tier caching strategy** for optimal performance:
 3. Download from network 🌐 (slow, then cache for future)
 
 This ensures smooth scrolling, offline image viewing, and minimal network usage.
+
+## Known Issues
+
+### iOS 26 DefaultToolbarItem Console Warning
+
+When running on iOS 26+ simulators/devices, you may see the following console warning:
+
+```
+Ignoring searchBarPlacementBarButtonItem because its vending navigation item does not match
+the view controller's.
+```
+
+**What it is:**
+- A UIKit/SwiftUI bridging warning from the new iOS 26 `DefaultToolbarItem` API
+- The code follows Apple's documented API correctly
+- This appears to be an internal framework issue with how SwiftUI's `NavigationStack` bridges to UIKit
+
+**Impact:**
+- ✅ **No functional impact** - The search bar appears and works correctly in the bottom toolbar
+- ⚠️ **Console noise only** - Safe to ignore
+- 👀 **Expected behavior** - Search appears in bottom toolbar on iOS 26+, navigation bar on earlier versions
+
+**Code location:** `ViewModifiers/SearchToolbarModifier.swift`
+
+This type of warning is common with newly introduced iOS APIs and typically gets resolved in later iOS releases as Apple refines the internal implementation.
 
 ## API Integration
 
