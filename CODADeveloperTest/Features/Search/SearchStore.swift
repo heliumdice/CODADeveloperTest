@@ -51,7 +51,8 @@ final class SearchStore {
 
     /// Loads cached data for the current query from Core Data
     func loadCached() async {
-        let mediaItems = await repository.fetchMediaForSearchTerm(query)
+        let trimmedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        let mediaItems = await repository.fetchMediaForSearchTerm(trimmedQuery)
         self.items = mediaItems.map { MediaItemViewState(from: $0) }
     }
 
@@ -69,20 +70,26 @@ final class SearchStore {
     /// Performs a search: fetches from API, persists to Core Data, then refreshes UI
     /// Falls back to cached data if offline
     func search() async {
-        guard !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+        // Normalize query: trim whitespace for consistency
+        let trimmedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard !trimmedQuery.isEmpty else {
             error = "Please enter a search term"
             return
         }
+
+        // Update stored property with normalized value
+        query = trimmedQuery
 
         isLoading = true
         error = nil
 
         do {
             // 1. Fetch from NASA API
-            let results = try await apiService.search(query: query)
+            let results = try await apiService.search(query: trimmedQuery)
 
             // 2. Persist to Core Data
-            try await repository.saveSearchResults(results, for: query)
+            try await repository.saveSearchResults(results, for: trimmedQuery)
 
             // 3. Refresh UI from Core Data (single source of truth)
             await loadCached()
