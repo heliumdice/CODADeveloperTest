@@ -100,8 +100,18 @@ final class NASAAPIService: NASAAPIServiceProtocol {
             return searchResponse.collection.items
 
         } catch let error as NetworkError {
+            // Re-throw our own network errors
             throw error
+        } catch let urlError as URLError {
+            // Handle URLSession transport errors (offline, timeout, etc.)
+            switch urlError.code {
+            case .notConnectedToInternet, .networkConnectionLost, .dataNotAllowed:
+                throw NetworkError.networkUnavailable
+            default:
+                throw NetworkError.networkError(urlError)
+            }
         } catch {
+            // Only decoding errors should reach here
             throw NetworkError.decodingFailed(error)
         }
     }
