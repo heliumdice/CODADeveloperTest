@@ -31,14 +31,22 @@ final class MediaRepository {
             // 1. Get or create SearchQuery
             let searchQuery = try self.getOrCreateSearchQuery(term, in: context)
 
-            // 2. Process each search item
+            // 2. Clear existing SearchQueryItem joins for this search term
+            // This ensures cached data reflects the latest API results
+            if let existingJoins = searchQuery.searchQueryItems as? Set<SearchQueryItem> {
+                for join in existingJoins {
+                    context.delete(join)
+                }
+            }
+
+            // 3. Process each search item
             for item in items {
                 guard let firstData = item.data.first else { continue }
 
-                // 3. Upsert MediaItem by nasaID
+                // 4. Upsert MediaItem by nasaID
                 let mediaItem = try self.getOrCreateMediaItem(from: firstData, in: context)
 
-                // 4. Clear and recreate MediaLink children
+                // 5. Clear and recreate MediaLink children
                 if let existingLinks = mediaItem.links as? Set<MediaLink> {
                     for link in existingLinks {
                         context.delete(link)
@@ -59,20 +67,15 @@ final class MediaRepository {
                     }
                 }
 
-                // 5. Create or verify SearchQueryItem join relationship
-                let relationshipExists = (searchQuery.searchQueryItems as? Set<SearchQueryItem>)?.contains { queryItem in
-                    queryItem.mediaItem?.nasaID == mediaItem.nasaID
-                } ?? false
-
-                if !relationshipExists {
-                    let searchQueryItem = SearchQueryItem(context: context)
-                    searchQueryItem.createdAt = Date()
-                    searchQueryItem.searchQuery = searchQuery
-                    searchQueryItem.mediaItem = mediaItem
-                }
+                // 6. Create SearchQueryItem join relationship
+                // Since we cleared all joins upfront, we recreate them for the current results
+                let searchQueryItem = SearchQueryItem(context: context)
+                searchQueryItem.createdAt = Date()
+                searchQueryItem.searchQuery = searchQuery
+                searchQueryItem.mediaItem = mediaItem
             }
 
-            // 6. Save context
+            // 7. Save context
             try context.save()
         }
 
