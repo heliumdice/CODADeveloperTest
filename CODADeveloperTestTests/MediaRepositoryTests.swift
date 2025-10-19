@@ -223,4 +223,71 @@ struct MediaRepositoryTests: Sendable {
         let fetchedItems = await repository.fetchMediaForSearchTerm("nonexistent")
         #expect(fetchedItems.isEmpty)
     }
+
+    @Test
+    func testSearchResultsClearStaleJoins() async throws {
+        let coreDataManager = createInMemoryCoreDataManager()
+        let repository = await MediaRepository(coreDataManager: coreDataManager)
+
+        let searchTerm = "mars"
+
+        // First search: Save 5 items
+        let firstSearchItems = [
+            createSampleSearchItem(nasaId: "PIA001", title: "Item 1"),
+            createSampleSearchItem(nasaId: "PIA002", title: "Item 2"),
+            createSampleSearchItem(nasaId: "PIA003", title: "Item 3"),
+            createSampleSearchItem(nasaId: "PIA004", title: "Item 4"),
+            createSampleSearchItem(nasaId: "PIA005", title: "Item 5")
+        ]
+        try await repository.saveSearchResults(firstSearchItems, for: searchTerm)
+
+        // Verify 5 items are cached
+        let firstFetch = await repository.fetchMediaForSearchTerm(searchTerm)
+        #expect(firstFetch.count == 5)
+
+        // Second search: NASA returns only 2 items (simulating API returning fewer results)
+        let secondSearchItems = [
+            createSampleSearchItem(nasaId: "PIA006", title: "New Item 1"),
+            createSampleSearchItem(nasaId: "PIA007", title: "New Item 2")
+        ]
+        try await repository.saveSearchResults(secondSearchItems, for: searchTerm)
+
+        // Verify only 2 items are now cached (old joins should be cleared)
+        let secondFetch = await repository.fetchMediaForSearchTerm(searchTerm)
+        #expect(secondFetch.count == 2)
+        #expect(secondFetch.contains { $0.nasaID == "PIA006" })
+        #expect(secondFetch.contains { $0.nasaID == "PIA007" })
+
+        // Verify old items are NOT returned (stale joins were cleared)
+        #expect(!secondFetch.contains { $0.nasaID == "PIA001" })
+        #expect(!secondFetch.contains { $0.nasaID == "PIA002" })
+        #expect(!secondFetch.contains { $0.nasaID == "PIA003" })
+    }
+
+    @Test
+    func testSearchResultsHandleZeroResults() async throws {
+        let coreDataManager = createInMemoryCoreDataManager()
+        let repository = await MediaRepository(coreDataManager: coreDataManager)
+
+        let searchTerm = "apollo"
+
+        // First search: Save 3 items
+        let firstSearchItems = [
+            createSampleSearchItem(nasaId: "PIA100", title: "Apollo 1"),
+            createSampleSearchItem(nasaId: "PIA101", title: "Apollo 2"),
+            createSampleSearchItem(nasaId: "PIA102", title: "Apollo 3")
+        ]
+        try await repository.saveSearchResults(firstSearchItems, for: searchTerm)
+
+        // Verify 3 items are cached
+        let firstFetch = await repository.fetchMediaForSearchTerm(searchTerm)
+        #expect(firstFetch.count == 3)
+
+        // Second search: NASA returns zero results (edge case)
+        try await repository.saveSearchResults([], for: searchTerm)
+
+        // Verify no items are returned (all joins cleared, none created)
+        let secondFetch = await repository.fetchMediaForSearchTerm(searchTerm)
+        #expect(secondFetch.isEmpty)
+    }
 }
