@@ -46,11 +46,17 @@ final class NASAAPIService: NASAAPIServiceProtocol {
 
     private let session: URLSession
 
-    init(session: URLSession = .shared) {
-        let configuration = URLSessionConfiguration.default
-        configuration.timeoutIntervalForRequest = Self.requestTimeout
-        configuration.waitsForConnectivity = true
-        self.session = session
+    init(session: URLSession? = nil) {
+        if let session = session {
+            // Use provided session (for testing)
+            self.session = session
+        } else {
+            // Create session with custom configuration
+            let configuration = URLSessionConfiguration.default
+            configuration.timeoutIntervalForRequest = Self.requestTimeout
+            configuration.waitsForConnectivity = true
+            self.session = URLSession(configuration: configuration)
+        }
     }
 
     /// Searches the NASA Image and Video Library API
